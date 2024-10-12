@@ -1,0 +1,18 @@
+{
+  "name": "video-localization-automation",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Automate the process of creating localized versions of a video by overlaying different images and titles",
+  "dependencies": {
+    "@supercharge/promise-pool": "^3.2.0",
+    "canvas": "^2.11.2",
+    "commander": "^12.1.0",
+    "fluent-ffmpeg": "^2.1.3"
+  }
+}
