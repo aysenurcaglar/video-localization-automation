@@ -7,25 +7,21 @@ async function processVideo(inputPath, outputPath) {
     ffmpeg(inputPath)
       .videoFilters([
         {
+          filter: 'select',
+          options: 'gte(n,0)',  // Select all frames
+        },
+        {
           filter: 'chromakey',
           options: { color: '04f405', similarity: 0.3, blend: 0.1 }
         }
       ])
-      .frames(1)
-      .saveToFile('green_mask.png')
+      .outputOptions(['-vf', 'fps=1']) // Extract one frame per second
+      .output('frames_%d.png')
       .on('end', async () => {
         try {
-          const image = await loadImage('green_mask.png');
-          const canvas = createCanvas(image.width, image.height);
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(image, 0, 0);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const greenArea = identifyGreenArea(imageData);
-
-          console.log('Green area identified:', greenArea);
-
-          await fs.unlink('green_mask.png');
-          resolve(greenArea);
+          const greenAreas = await processFrames();
+          console.log('Green areas identified:', greenAreas);
+          resolve(greenAreas);
         } catch (error) {
           reject(error);
         }
@@ -33,8 +29,27 @@ async function processVideo(inputPath, outputPath) {
       .on('error', (err) => {
         console.error('Error processing video:', err);
         reject(err);
-      });
+      })
+      .run();
   });
+}
+
+async function processFrames() {
+  const files = await fs.readdir('.');
+  const frameFiles = files.filter(file => file.startsWith('frames_') && file.endsWith('.png'));
+  
+  const greenAreas = await Promise.all(frameFiles.map(async (file, index) => {
+    const image = await loadImage(file);
+    const canvas = createCanvas(image.width, image.height);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(image, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const greenArea = identifyGreenArea(imageData);
+    await fs.unlink(file);
+    return { frame: index, ...greenArea };
+  }));
+
+  return greenAreas;
 }
 
 function identifyGreenArea(imageData) {

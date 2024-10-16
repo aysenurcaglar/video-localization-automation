@@ -5,8 +5,8 @@ async function overlayImage(videoPath, imagePath, outputPath, overlayArea) {
     ffmpeg(videoPath)
       .input(imagePath)
       .complexFilter([
-        `[1:v]scale=${overlayArea.width}:${overlayArea.height}[overlay]`,
-        `[0:v][overlay]overlay=${overlayArea.x}:${overlayArea.y}:enable='between(t,0,inf)'[out]`
+        `[1:v]scale=${overlayArea.width}:${overlayArea.height}[ovrl]`, // Scale image
+        `[0:v][ovrl]overlay=${overlayArea.x}:${overlayArea.y}` // Position image
       ])
       .map('[out]')
       .videoCodec('libx264')
